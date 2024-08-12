@@ -1,1 +1,111 @@
+pip install ceviche
 
+import numpy as np
+import autograd.numpy as npa
+from scipy import interpolate
+import copy
+
+import matplotlib as mpl
+mpl.rcParams['figure.dpi']=100
+
+import matplotlib.pylab as plt
+
+from autograd.scipy.signal import convolve as conv
+from skimage.draw import disk
+
+import ceviche
+from ceviche import fdfd_ez, jacobian
+from ceviche.optimizers import adam_optimize
+from ceviche.modes import insert_mode
+
+import collections
+# Create a container for our slice coords to be used for sources and probes
+Slice = collections.namedtuple('Slice', 'x y')
+
+pip install tensorflow
+
+
+from keras.datasets import mnist     # MNIST dataset is included in Keras
+# The MNIST data is split between 60,000 28 x 28 pixel training images and 10,000 28 x 28 pixel images
+(EpsX_train, y_train), (EpsX_test, y_test) = mnist.load_data()
+EpsX_train.shape, y_train.shape, EpsX_test.shape, y_test.shape
+
+
+Nx = 100
+Ny = 100
+Nx_half = Nx//2
+Ny_half = Ny//2
+
+iindex0 = 34           # 34 is zero
+iindex1 = 14           # 14 is one
+iindex2 = 25           # 25 is two
+#iindex3 = 27           # 27 is three
+
+
+# if we want to enlarge the figure size, then do something like this
+xA = np.arange(0,28)
+yA = np.arange(0,28)
+
+xi = np.arange(0,28,0.4)
+yi = np.arange(0,28,0.4)
+
+f0 = interpolate.interp2d(xA, yA, EpsX_train[iindex0,:,:]/256.0, kind='cubic')
+f1 = interpolate.interp2d(xA, yA, EpsX_train[iindex1,:,:]/256.0, kind='cubic')
+f2 = interpolate.interp2d(xA, yA, EpsX_train[iindex2,:,:]/256.0, kind='cubic')
+
+zi0 = f0(xi, yi)
+zi1 = f1(xi, yi)
+zi2 = f2(xi, yi)
+
+Npixel = len(xi)
+Npixel_half = Npixel//2
+
+epsr0 = np.zeros((Nx, Ny))
+epsr1 = np.zeros((Nx, Ny))
+epsr2 = np.zeros((Nx, Ny))
+
+epsr0[Nx_half-Npixel_half:Nx_half+Npixel_half,Ny_half-Npixel_half:Ny_half+Npixel_half] = zi0
+epsr1[Nx_half-Npixel_half:Nx_half+Npixel_half,Ny_half-Npixel_half:Ny_half+Npixel_half] = zi1
+epsr2[Nx_half-Npixel_half:Nx_half+Npixel_half,Ny_half-Npixel_half:Ny_half+Npixel_half] = zi2
+
+ax = ceviche.viz.abs(epsr0, cbar=True);
+plt.show()
+
+ax = ceviche.viz.abs(epsr1, cbar=True);
+plt.show()
+
+ax = ceviche.viz.abs(epsr2, cbar=True);
+plt.show()
+
+#!pip install tidy3d
+!pip install tidy3d==2.6.4
+
+import numpy as np
+from numpy import random
+import matplotlib.pyplot as plt
+
+# tidy3D import
+import tidy3d.web as web
+import tidy3d as td
+
+
+Nx= 5
+Ny= 5
+Npml= 0.4
+space = 0.8
+wg_width = 0.5
+wg_length = 1.2
+design_region_x= 2.6
+design_region_y= 2.6
+gap = 0.45 #distance between output ports
+digit = 1 #for each digit
+
+f0 = 500e12
+wavelength =  td.C_0 / f0
+
+# bandwidth in Hz
+fwidth = f0 / 5.0
+fmin = f0 - fwidth
+fmax = f0 + fwidth
+wavelength_max = td.C_0 / fmin
+wavelength_min = td.C_0 / fmax
